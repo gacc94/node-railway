@@ -1,7 +1,7 @@
-const { response } = require('express')
-const User = require('../models/User')
-const bcrypt = require('bcryptjs');
-const {generarJWT} = require("../helpers/jwt");
+const { response }  = require('express')
+const User          = require('../models/User')
+const bcrypt        = require('bcryptjs');
+const {generarJWT}  = require("../helpers/jwt");
 const createUser = async (req ,res = response)=>{
     const {name, email , password } = req.body;
     try {
@@ -53,7 +53,7 @@ const createUser = async (req ,res = response)=>{
 
 const loginUser = async (req, res= response)=>{
 
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
     try{
 
         const dbUser = await User.findOne({email});
@@ -67,18 +67,20 @@ const loginUser = async (req, res= response)=>{
     //     Confirmar si el password hace match
         const validarPassword = bcrypt.compareSync( password, dbUser.password);
         if(!validarPassword){
-            return res.json({
+            return res.status(400).json({
                 ok:false,
                 msg: 'El password no es valido',
             })
         };
         const token = await generarJWT(dbUser.id, dbUser.name);
 
-        return res.json({
+        return res.status(201).json({
             ok: true,
             uid: dbUser.id,
             name: dbUser.name,
+            // email, dbUser.email,
             token,
+            msg: 'La solicitud es valida'
         })
 
 
@@ -97,14 +99,20 @@ const loginUser = async (req, res= response)=>{
 }
 
 const updateToken = async (req,res = response)=>{
-    const  {uid, name} = req;
+    const  { uid } = req;
+    // leer base de datos
+    const dbUser = await User.findById(uid);
 
-    const token = await generarJWT(uid, name);
+
+
+
+    const token = await generarJWT(uid, dbUser.name);
 
     return res.json({
         ok: true,
         uid,
-        name,
+        name: dbUser.name,
+        email: dbUser.email,
         token,
     })
 }
